@@ -26,6 +26,8 @@ interface PluginOpts {
   isClient?: boolean;
 }
 
+const CORE_PLUGINS = [PluginImmer, PluginRandom, PluginLog];
+
 /**
  * List of plugins that are always added.
  */
@@ -167,45 +169,47 @@ export const Enhance = (
 export const Flush = (state: State, opts: PluginOpts): State => {
   // Note that we flush plugins in reverse order, to make sure that plugins
   // that come before in the chain are still available.
-  [...DEFAULT_PLUGINS, ...opts.game.plugins].reverse().forEach((plugin) => {
-    const name = plugin.name;
-    const pluginState = state.plugins[name] || { data: {} };
+  [...CORE_PLUGINS, ...opts.game.plugins, PluginEvents]
+    .reverse()
+    .forEach((plugin) => {
+      const name = plugin.name;
+      const pluginState = state.plugins[name] || { data: {} };
 
-    if (plugin.flush) {
-      const newData = plugin.flush({
-        G: state.G,
-        ctx: state.ctx,
-        game: opts.game,
-        api: pluginState.api,
-        data: pluginState.data,
-      });
+      if (plugin.flush) {
+        const newData = plugin.flush({
+          G: state.G,
+          ctx: state.ctx,
+          game: opts.game,
+          api: pluginState.api,
+          data: pluginState.data,
+        });
 
-      state = {
-        ...state,
-        plugins: {
-          ...state.plugins,
-          [plugin.name]: { data: newData },
-        },
-      };
-    } else if (plugin.dangerouslyFlushRawState) {
-      state = plugin.dangerouslyFlushRawState({
-        state,
-        game: opts.game,
-        api: pluginState.api,
-        data: pluginState.data,
-      });
+        state = {
+          ...state,
+          plugins: {
+            ...state.plugins,
+            [plugin.name]: { data: newData },
+          },
+        };
+      } else if (plugin.dangerouslyFlushRawState) {
+        state = plugin.dangerouslyFlushRawState({
+          state,
+          game: opts.game,
+          api: pluginState.api,
+          data: pluginState.data,
+        });
 
-      // Remove everything other than data.
-      const data = state.plugins[name].data;
-      state = {
-        ...state,
-        plugins: {
-          ...state.plugins,
-          [plugin.name]: { data },
-        },
-      };
-    }
-  });
+        // Remove everything other than data.
+        const data = state.plugins[name].data;
+        state = {
+          ...state,
+          plugins: {
+            ...state.plugins,
+            [plugin.name]: { data },
+          },
+        };
+      }
+    });
 
   return state;
 };

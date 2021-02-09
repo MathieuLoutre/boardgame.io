@@ -180,6 +180,22 @@ describe('actions', () => {
 });
 
 describe('plugins are accessible in events triggered from moves', () => {
+  const plugins = [
+    {
+      name: 'test',
+
+      setup: () => ({
+        initial: true,
+      }),
+
+      api: ({ data }) => {
+        return {
+          get: () => data.initial,
+        };
+      },
+    },
+  ];
+
   test('turn/onBegin', () => {
     const game = {
       moves: {
@@ -188,14 +204,17 @@ describe('plugins are accessible in events triggered from moves', () => {
       turn: {
         onBegin: (G, ctx) => {
           G.onBegin = ctx.random.Die(1);
+          G.custom = ctx.test.get();
         },
       },
+      plugins,
     };
 
     const client = Client({ game });
     client.moves.stop();
     expect(client.getState().G).toEqual({
       onBegin: 1,
+      custom: true,
     });
   });
 
@@ -207,14 +226,17 @@ describe('plugins are accessible in events triggered from moves', () => {
       turn: {
         onEnd: (G, ctx) => {
           G.onEnd = ctx.random.Die(1);
+          G.custom = ctx.test.get();
         },
       },
+      plugins,
     };
 
     const client = Client({ game });
     client.moves.stop();
     expect(client.getState().G).toEqual({
       onEnd: 1,
+      custom: true,
     });
   });
 
@@ -230,15 +252,18 @@ describe('plugins are accessible in events triggered from moves', () => {
         second: {
           onBegin: (G, ctx) => {
             G.onEnd = ctx.random.Die(1);
+            G.custom = ctx.test.get();
           },
         },
       },
+      plugins,
     };
 
     const client = Client({ game });
     client.moves.stop();
     expect(client.getState().G).toEqual({
       onEnd: 1,
+      custom: true,
     });
   });
 
@@ -252,15 +277,18 @@ describe('plugins are accessible in events triggered from moves', () => {
           start: true,
           onEnd: (G, ctx) => {
             G.onEnd = ctx.random.Die(1);
+            G.custom = ctx.test.get();
           },
         },
       },
+      plugins,
     };
 
     const client = Client({ game });
     client.moves.stop();
     expect(client.getState().G).toEqual({
       onEnd: 1,
+      custom: true,
     });
   });
 });
